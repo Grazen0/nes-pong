@@ -1,5 +1,5 @@
 NAME				:= pong
-FCEUX				:= fceux64
+EMU_BIN			:= fceux64
 
 TARGET_EXEC	:= $(NAME).nes
 TARGET_DBG	:= $(NAME).dbgfile
@@ -31,7 +31,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.asm
 	ca65 -o "$@" --debug-info --create-dep "$(patsubst %.o,%.d,$@)" $(INC_FLAGS) $<
 
 run: $(BUILD_DIR)/$(TARGET_EXEC)
-	$(FCEUX) "$<"
+	$(EMU_BIN) "$<"
 
 clean:
 	rm -rf $(BUILD_DIR)
