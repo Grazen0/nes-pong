@@ -25,16 +25,42 @@ SCREEN_HEIGHT	= 8 * TILE_ROWS
 SCREEN_MIDDLE_X	= SCREEN_WIDTH / 2
 SCREEN_MIDDLE_Y	= SCREEN_HEIGHT / 2
 
-OAM = $0200
+;;; OAM sprite bytes
+.scope Sprite
+	Y_POS	= $00
+	TILE	= $01
+	ATTR	= $02
+	X_POS	= $03
+.endscope
+
+STATE_ZP	= $0020
+OAM		= $0200
 
 .globalzp sleeping
 
 .globalzp game_state
-.globalzp buttons
 
+.globalzp nmi_enabled
 .globalzp dma_enabled
 .globalzp draw_enabled
+
 .globalzp soft_ppu_ctrl
 .globalzp soft_ppu_mask
+
+.globalzp player_a_score
+.globalzp player_b_score
+
+.macro LD_PPU_ADDR addr
+	bit	PPU_STATUS	; Reset the PPU_ADDR latch
+	lda	#>addr		; High byte
+	sta	PPU_ADDR
+	lda	#<addr		; Low byte
+	sta	PPU_ADDR
+.endmacro
+
+.macro WAIT_VBLANK_FISHY
+:	bit	PPU_STATUS
+	bpl	:-
+.endmacro
 
 .endif

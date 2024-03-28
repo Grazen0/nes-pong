@@ -1,11 +1,10 @@
-.include "macros.inc"
+.include "pseudo_ops.inc"
 .include "system.inc"
 .include "random.inc"
 .include "controller.inc"
-.include "video/macros.inc"
-.include "video/draw_buffer.inc"
-.include "game/fixed_loop.inc"
-.include "game/init.inc"
+.include "bg_buffer.inc"
+.include "fixed_loop.inc"
+.include "init.inc"
 
 .segment "HEADER"
 	.byte "NES", $1A
@@ -15,50 +14,6 @@
 
 .segment "CODE"
 
-;;; NMI (VBLANK) -----------------------------------------
-.proc NMI
-	pha
-	txa
-	pha
-	tya
-	pha
-
-	;;; Transfer sprite data to PPU OAM
-	lda	dma_enabled
-	beq	:+
-	lda	#$00
-	sta	OAM_ADDR
-	lda	#>OAM
-	sta	OAM_DMA
-:	
-	;;; Draw buffer
-	lda	draw_enabled
-	beq	:+
-	jsr	DrawBuffer
-:
-	;;; Restore PPU_CTRL and scroll after VRAM writes
-	lda	soft_ppu_ctrl
-	sta	PPU_CTRL
-	lda	soft_ppu_mask
-	sta	PPU_MASK
-
-	bit	PPU_STATUS	; Latch (?)
-	lda	#$00
-	sta	PPU_SCROLL
-	sta	PPU_SCROLL
-
-	; lda	#$00
-	sta	sleeping	; Clear sleeping flag
-
-	pla
-	tay
-	pla
-	tax
-	pla
-	rti
-.endproc
-
-;;; Main code --------------------------------------------
 .proc RESET
 	sei	; Disable IRQs
 	cld	; Disable decimal mode
@@ -67,14 +22,17 @@
 	txs
 
 	inx			; X = 0
-	stx	PPU_CTRL	; Disable NMI
+	stx	PPU_CTRL	; Disable NMIs
 	stx	PPU_MASK	; Disable rendering
 	stx	APU_STATUS	; Disable sound
 	stx	APU_DMC_CTRL	; Disable DMC IRQs
-	stx	dma_enabled	; Disable OAM transfer
-	stx	draw_enabled	; Disable buffer drawing
+	; stx	dma_enabled	; Disable OAM transfer
+	; stx	draw_enabled	; Disable buffer drawing
 	lda	#$40
 	sta	APU_FC		; Disable APU IRQs
+
+	stx	soft_ppu_ctrl	; These still need 0,
+	stx	soft_ppu_mask	; but aren't as critical
 
 	bit	PPU_STATUS	; Clear VBL flag just in case
 	WAIT_VBLANK_FISHY
@@ -104,12 +62,13 @@ clear_oam_loop:
 	lda	#$30		; White
 	sta	PPU_DATA
 
-	jsr	ResetBufPtr
+	jsr	ResetBgBufPtr
 
 	jsr	GameInit
 
 	;;; FINAL INIT
 	ldx	#$01
+	stx	nmi_enabled	; Enable NMI processing
 	stx	dma_enabled	; Enable OAM transfer
 	stx	draw_enabled	; Enable buffer drawing
 
@@ -141,6 +100,52 @@ waiting_for_vblank:
 	jsr	GameFixedLoop
 
 	jmp	main_loop
+.endproc
+
+.proc NMI
+	pha
+	lda	nmi_enabled
+	beq	nmi_disabled
+	
+	txa
+	pha
+	tya
+	pha
+
+	;;; Transfer sprite data to PPU OAM
+	lda	dma_enabled
+	beq	:+
+	lda	#$00
+	sta	OAM_ADDR
+	lda	#>OAM
+	sta	OAM_DMA
+:	
+	;;; Draw buffer
+	lda	draw_enabled
+	beq	:+
+	jsr	DrawBgBuffer
+:
+	;;; Restore PPU_CTRL and scroll after VRAM writes
+	lda	soft_ppu_ctrl
+	sta	PPU_CTRL
+	lda	soft_ppu_mask
+	sta	PPU_MASK
+
+	bit	PPU_STATUS	; Latch (?)
+	lda	#$00
+	sta	PPU_SCROLL
+	sta	PPU_SCROLL
+
+	; lda	#$00
+	sta	sleeping	; Clear sleeping flag
+
+	pla
+	tay
+	pla
+	tax
+nmi_disabled:
+	pla
+	rti
 .endproc
 
 .segment "VECTORS"

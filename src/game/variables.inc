@@ -9,9 +9,6 @@ __GAME_VARIABLES_INC__ = 1
 .globalzp paddle_a_y
 .globalzp paddle_b_y
 
-.globalzp player_a_score
-.globalzp player_b_score
-
 .global spr_ball
 .global sprs_paddle_a
 .global sprs_paddle_b

@@ -1,113 +1,154 @@
 .include "fixed_loop.inc"
 
-.include "macros.inc"
 .include "system.inc"
+.include "pseudo_ops.inc"
+.include "controller.inc"
 .include "constants.inc"
 .include "variables.inc"
 .include "subroutines.inc"
+
 
 .segment "CODE"
 
 .proc GameFixedLoop
 
 .proc paddleAMovement
+	;;; DOWN
 	lda	buttons
 	and	#BTN_DOWN
-	beq	down_skip
-
+	beq	:+
+	
 	lda	paddle_a_y
-	cmp	#(WALL_BOTTOM - PADDLE_HEIGHT)	; Skip if already at border
-	bcs	down_skip
-
-	inc	paddle_a_y	; Paddle go down
-	inc	paddle_a_y	; Paddle go down
-
-	jmp	up_skip
-down_skip:
-
+	clc
+	adc	#PADDLE_A_SPEED			; Paddle go up, but...
+	MIN	#(WALL_BOTTOM - PADDLE_HEIGHT)	; ...keep inside wall
+	sta	paddle_a_y
+	
+	jmp	end
+:
+	;;; UP
 	lda	buttons
 	and	#BTN_UP
-	beq	up_skip
-
+	beq	end
+	
 	lda	paddle_a_y
-	cmp	#(WALL_TOP + 1)
-	BR_LEQ	up_skip
+	sec
+	sbc	#PADDLE_A_SPEED	; Paddle go up, but...
+	MAX	#(WALL_TOP + 1)	; ...keep inside wall
+	sta	paddle_a_y
+end:
+.endproc
 
-	dec	paddle_a_y	; Paddle go up
-	dec	paddle_a_y
-up_skip:
+.proc paddleBMovement
+	lda	paddle_b_y
+	clc
+	adc	#(PADDLE_HEIGHT / 2)	
+	cmp	ball_y
+
+	lda	paddle_b_y
+	bcc	move_down
+move_up:
+	; sec
+	sbc	#PADDLE_B_SPEED
+	MAX	#(WALL_TOP + 1)
+	sta	paddle_b_y
+
+	jmp	end
+move_down:
+	; clc
+	adc	#PADDLE_B_SPEED
+	MIN	#(WALL_BOTTOM - PADDLE_HEIGHT)
+	sta	paddle_b_y
+end:
 .endproc
 
 .proc ballMovement
-	;;; Move ball vertically
+	;;; VERTICAL
 	lda	ball_y
 	clc
 	adc	ball_speed_y
 	sta	ball_y
 	
+	;;; Check for bounce
 	cmp	#(WALL_BOTTOM - BALL_SIZE)
 	bcs	bounce_y
 	cmp	#(WALL_TOP + 1)
 	BR_GT	:+
-
 bounce_y:
-	lda	ball_speed_y
-	eor	#$FF
-	; sec
-	adc	#$00
-	sta	ball_speed_y
+	NEG	ball_speed_y	; Could be optimized, carry is already set
 :
-	;;; Move ball horizontally
+	;;; HORIZONTAL
 	lda	ball_x
 	clc
 	adc	ball_speed_x
 	sta	ball_x
 
-	lda	ball_speed_x
+	bit	ball_speed_x
 	bmi	left_collisions
 
-	;;; Check for collisions to the right
-	lda	ball_x
-	cmp	#(PADDLE_A_X - BALL_SIZE)
-	bcc	horizontal_end	; Ball hasn't reached the paddle (and border, ofc)
+	;;; RIGHT COLLISIONS
+	;;; Check for paddle horizontal range
+	CPR_C	(PADDLE_A_X - BALL_SIZE), (PADDLE_A_X + PADDLE_WIDTH - 1)
+	bcs	no_paddle_a_col
 
-	cmp	#(SCREEN_WIDTH - PADDLE_MARGIN)
-	bcs	check_border_col	; Ball has passed the paddle already
-	
 	;;; Ball is in horizontal range of the paddle
 	;;; Check vertical range now
 	lda	ball_y
 	; clc
-	adc	#(BALL_SIZE-1)	; (No need for clc, carry is already clear)
+	adc	#(BALL_SIZE - 1)
 	cmp	paddle_a_y
-	bcc	horizontal_end	; Ball is over paddle
+	bcc	end					; Ball is over paddle
 	; sec
-	sbc	#((BALL_SIZE-1)+PADDLE_HEIGHT)	; Recover ball_y, then subtract paddle height
+	sbc	#(BALL_SIZE - 1 + PADDLE_HEIGHT)	; Recover ball_y, then subtract PADDLE_HEIGHT
 	cmp	paddle_a_y
-	bcs	horizontal_end	; Ball is under paddle
+	bcs	end					; Ball is under paddle
 
-bounce_x:
-	lda	ball_speed_x
-	eor	#$FF
-	; clc
-	adc	#$01
-	sta	ball_speed_x
+	;;; Bounce
+	NEG	ball_speed_x	; Could be optimized, carry is already clear
+	jmp	end
 
-	jmp	horizontal_end
-
-check_border_col:
-	cmp	#(SCREEN_WIDTH - BALL_SIZE)
-	BR_LEQ	horizontal_end
+no_paddle_a_col:
+	lda	ball_x
+	cmp	#(SCREEN_WIDTH - BALL_SIZE + 1)
+	bcc	end
 
 	;;; Collision with the border on the right
+	inc	player_b_score
+	jsr	DrawPlayerBScore
 	jsr	ResetBall
-	jmp	horizontal_end
+	jmp	end
 
 left_collisions:
-	lda	ball_x
-	;;; TODO
+	;;; LEFT COLLISIONS
+	;;; Check for paddle horizontal range
+	CPR_C	(PADDLE_B_X - BALL_SIZE + 1), (PADDLE_B_X + PADDLE_WIDTH)
+	bcs	no_paddle_b_col
 
-horizontal_end:
+	;;; Ball is in horizontal range of the paddle
+	;;; Check vertical range now
+	lda	ball_y
+	; clc
+	adc	#(BALL_SIZE - 1)
+	cmp	paddle_b_y
+	bcc	end					; Ball is over paddle
+	; sec
+	sbc	#(BALL_SIZE - 1 + PADDLE_HEIGHT)	; Recover ball_y, then subtract PADDLE_HEIGHT
+	cmp	paddle_b_y
+	bcs	end
+
+	;;; Bounce
+	NEG	ball_speed_x
+	jmp	end		
+
+no_paddle_b_col:
+	lda	ball_x
+	cmp	#$00
+	bne	end
+
+left_wall_collided:
+	inc	player_a_score
+	jsr	ResetBall
+end:
 .endproc
 
 .proc updateSpriteData
@@ -118,9 +159,9 @@ horizontal_end:
 	;;; Ball
 	ldx	ball_y
 	dex
-	stx	spr_ball+SPR_Y
+	stx	spr_ball+Sprite::Y_POS
 	lda	ball_x
-	sta	spr_ball+SPR_X
+	sta	spr_ball+Sprite::X_POS
 
 	;;; Paddle A
 	ldx	paddle_a_y
@@ -129,14 +170,30 @@ horizontal_end:
 	ldx	#$00
 	clc
 update_paddle_a_loop:
-	sta	sprs_paddle_a+SPR_Y, x
+	sta	sprs_paddle_a+Sprite::Y_POS, x
 	adc	#$08
 	inx
 	inx
 	inx
 	inx
-	cpx	#($04 * PADDLE_LEN)
+	cpx	#($04 * PADDLE_TILES)
 	bne	update_paddle_a_loop
+	
+	;;; Paddle B
+	ldx	paddle_b_y
+	dex			; Offset Y coordinate by -1 because rendering sucks
+	txa
+	ldx	#$00
+	clc
+update_paddle_b_loop:
+	sta	sprs_paddle_b+Sprite::Y_POS, x
+	adc	#$08
+	inx
+	inx
+	inx
+	inx
+	cpx	#($04 * PADDLE_TILES)
+	bne	update_paddle_b_loop
 	
 	lda	#$01		; Enable OAM transfer
 	sta	dma_enabled
