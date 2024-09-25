@@ -1,5 +1,5 @@
 NAME				:= pong
-EMU_BIN			:= fceux64
+EMU_BIN			:= fceux
 
 TARGET_EXEC	:= $(NAME).nes
 TARGET_DBG	:= $(NAME).dbgfile
