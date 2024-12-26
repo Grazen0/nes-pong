@@ -1,2 +1,8 @@
 build/
 .vscode/
+
+# Nix build output
+/result
+
+.direnv/
+.envrc
