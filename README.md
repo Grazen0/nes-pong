@@ -12,4 +12,14 @@ Compiling this project requires the following dependencies:
 - [GNU Make](https://www.gnu.org/software/make/)
 - [cc65](https://cc65.github.io)
 
-Then, the program can be built simply by running `make`. The resulting ROM file will be located at `build/pong.nes`.
+Then, the program can be built by running `make`. The resulting ROM file will be located at `build/pong.nes`.
+
+### Running
+
+The resulting file at `build/pong.nes` may be ran with an emulator like [FCEUX](https://fceux.com/web/home.html).
+
+## Acknowledgments
+
+- [NESdev Wiki](https://www.nesdev.org/wiki/Nesdev_Wiki): An awesome website with all info there is to NES programming.
+- [Nerdy Nights](https://nerdy-nights.nes.science/): An awesome tutorial series for NES programming.
+- [The Zero Pages](https://www.youtube.com/playlist?list=PL29OkqO3wUxzOmjc0VKcdiNPqwliHEuEk): A useful YouTube playlist on NES programming by Michael Chiaramonte.
