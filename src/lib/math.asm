@@ -6,9 +6,9 @@ dec_digits: .res 3
 .segment "CODE"
 
 .proc DivideBy10
-	ldx	#$00
-	rol
-	rol
+    ldx    #$00
+    rol
+    rol
 .endproc
 
 .proc BinToDec

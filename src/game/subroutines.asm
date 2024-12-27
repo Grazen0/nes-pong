@@ -7,73 +7,73 @@
 .include "bg_buffer.inc"
 
 .segment "CODE"
-	
+    
 .proc ResetBall
-	lda	#(SCREEN_MIDDLE_X - (BALL_SIZE / 2))
-	sta	ball_x
-	lda	#(SCREEN_MIDDLE_Y - (BALL_SIZE / 2))
-	sta	ball_y
+    lda    #(SCREEN_MIDDLE_X - (BALL_SIZE / 2))
+    sta    ball_x
+    lda    #(SCREEN_MIDDLE_Y - (BALL_SIZE / 2))
+    sta    ball_y
 
-	lda	#BALL_SP_X_INIT
-	sta	ball_speed_x
+    lda    #BALL_SP_X_INIT
+    sta    ball_speed_x
 
-	jsr	RandomByte
-	bpl	neg	; 50/50 chance
+    jsr    RandomByte
+    bpl    neg    ; 50/50 chance
 
-	lda	#$01	; ball_speed_y = +1
-	jmp	:+
+    lda    #$01    ; ball_speed_y = +1
+    jmp    :+
 
-neg:	lda	#$FF	; ball_speed_y = -1
+neg:    lda    #$FF    ; ball_speed_y = -1
 
-:	sta	ball_speed_y
-	rts
+:    sta    ball_speed_y
+    rts
 
 .endproc
 
 .proc DrawPlayerAScore
-	ldy	player_a_score
-	ldx	left_digit_table, y
-	ldy	#$00
+    ldy    player_a_score
+    ldx    left_digit_table, y
+    ldy    #$00
 
-	DRAW_X_BIG_NUMBER $20B2
-	iny
+    DRAW_X_BIG_NUMBER $20B2
+    iny
 
-	ldx	player_a_score
-	lda	right_digit_table, x
-	tax
-	DRAW_X_BIG_NUMBER $20B5
+    ldx    player_a_score
+    lda    right_digit_table, x
+    tax
+    DRAW_X_BIG_NUMBER $20B5
 
-	jmp	UpdateBgBufPtr
+    jmp    UpdateBgBufPtr
 .endproc
 
 .proc DrawPlayerBScore
-	ldy	player_b_score
-	ldx	left_digit_table, y
-	ldy	#$00
+    ldy    player_b_score
+    ldx    left_digit_table, y
+    ldy    #$00
 
-	DRAW_X_BIG_NUMBER $20A9
-	iny
+    DRAW_X_BIG_NUMBER $20A9
+    iny
 
-	ldx	player_b_score
-	lda	right_digit_table, x
-	tax
-	DRAW_X_BIG_NUMBER $20AC
+    ldx    player_b_score
+    lda    right_digit_table, x
+    tax
+    DRAW_X_BIG_NUMBER $20AC
 
-	jmp	UpdateBgBufPtr
+    jmp    UpdateBgBufPtr
 .endproc
 
 left_digit_table:
-	.repeat 10, I
-		.repeat 10
-			.byte I
-		.endrep
-	.endrep
+    .repeat 10, I
+        .repeat 10
+            .byte I
+        .endrep
+    .endrep
 right_digit_table:
-	.repeat 10
-		.repeat 10, I
-			.byte I
-		.endrep
-	.endrep
+    .repeat 10
+        .repeat 10, I
+            .byte I
+        .endrep
+    .endrep
 
 digit_tile_1_1: .byte $07,$00,$0C,$0C,$0B,$07,$07,$0C,$07,$07
 digit_tile_2_1: .byte $0B,$00,$10,$0F,$13,$13,$15,$00,$15,$13
