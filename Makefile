@@ -8,28 +8,30 @@ SRC_DIR     := ./src
 BUILD_DIR   := ./build
 INC_DIR     := ./include
 OBJ_DIR     := $(BUILD_DIR)/obj
-SRCS        := $(shell find "$(SRC_DIR)" -name "*.asm")
+SRCS        := $(shell find '$(SRC_DIR)' -name '*.asm')
 OBJS        := $(patsubst $(SRC_DIR)/%.asm,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS        := $(OBJS:.o=.d)
+CFG_FILE    := ./pong.cfg
 
-INC_DIRS    := $(shell find "$(SRC_DIR)" -type d)
+INC_DIRS    := $(shell find '$(SRC_DIR)' -type d)
 INC_FLAGS   := $(addprefix -I ,$(INC_DIRS:%="%"))
 
 # Link
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	ld65 $^ -o "$@" -C "pong.cfg" \
-		--dbgfile "$(BUILD_DIR)/$(TARGET_DBG)" \
-		-m "$(BUILD_DIR)/$(TARGET_MAP)" \
-		-Ln "$(BUILD_DIR)/$(TARGET_LAB)"
+	ld65 -o '$@' -C '$(CFG_FILE)' \
+		--dbgfile '$(BUILD_DIR)/$(TARGET_DBG)' \
+		-m '$(BUILD_DIR)/$(TARGET_MAP)' \
+		-Ln '$(BUILD_DIR)/$(TARGET_LAB)' \
+		$^
 	
 
 # Build
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.asm
-	mkdir -p "$(dir $@)"
-	ca65 -o "$@" --debug-info --create-dep "$(patsubst %.o,%.d,$@)" $(INC_FLAGS) $<
+	mkdir -p '$(dir $@)'
+	ca65 -o '$@' --debug-info --create-dep '$(patsubst %.o,%.d,$@)' $(INC_FLAGS) $<
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf '$(BUILD_DIR)'
 
 .PHONY: clean
 

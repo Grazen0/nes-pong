@@ -1,19 +1,14 @@
 {pkgs ? import <nixpkgs> {}}:
-pkgs.stdenv.mkDerivation {
+pkgs.stdenvNoCC.mkDerivation {
   pname = "nes-pong";
   version = "0.1.0";
-
   src = ./.;
 
-  nativeBuildInputs = with pkgs; [gnumake cc65];
-
-  buildPhase = ''
-    make
-  '';
+  nativeBuildInputs = with pkgs; [cc65];
 
   installPhase = ''
-    mkdir -p $out/share/nes-pong/
-    cp build/pong.nes $out/share/nes-pong/
+    mkdir -p $out/share/nes-pong
+    cp build/pong.nes $out/share/nes-pong
   '';
 
   meta = with pkgs.lib; {

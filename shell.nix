@@ -2,7 +2,5 @@
 pkgs.mkShell {
   inputsFrom = [(pkgs.callPackage ./default.nix {})];
 
-  buildInputs = with pkgs; [
-    fceux
-  ];
+  nativeBuildInputs = with pkgs; [fceux];
 }
