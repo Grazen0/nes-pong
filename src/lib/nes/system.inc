@@ -37,16 +37,17 @@ STATE_ZP    = $0020
 OAM         = $0200
 
 .macro LD_PPU_ADDR addr
-    bit    PPU_STATUS    ; Reset the PPU_ADDR latch
-    lda    #>addr        ; High byte
-    sta    PPU_ADDR
-    lda    #<addr        ; Low byte
-    sta    PPU_ADDR
+    bit     PPU_STATUS    ; Reset the PPU_ADDR latch
+    lda     #>addr        ; High byte
+    sta     PPU_ADDR
+    lda     #<addr        ; Low byte
+    sta     PPU_ADDR
 .endmacro
 
 .macro WAIT_VBLANK_FISHY
-:   bit    PPU_STATUS
-    bpl    :-
+@wait_vblank_loop:
+    bit     PPU_STATUS
+    bpl     @wait_vblank_loop
 .endmacro
 
 .endif

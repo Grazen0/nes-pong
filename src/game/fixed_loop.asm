@@ -4,7 +4,6 @@
 .include "pseudo_ops.inc"
 .include "controller.inc"
 .include "constants.inc"
-.include "subroutines.inc"
 
 .segment "CODE"
 

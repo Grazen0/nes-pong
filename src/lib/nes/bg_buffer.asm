@@ -10,94 +10,92 @@ bg_buf_ptr: .res 2  ; u16
     ;;; bg_buf_ptr += Y + 1
     tya
     sec
-    adc    bg_buf_ptr
-    sta    bg_buf_ptr
+    adc     bg_buf_ptr
+    sta     bg_buf_ptr
     rts
 .endproc
 
 .proc reset_bg_buf_ptr
-    lda    #<BG_BUF_ADDR
-    sta    bg_buf_ptr
-    lda    #>BG_BUF_ADDR
-    sta    bg_buf_ptr+1
+    lda     #<BG_BUF_ADDR
+    sta     bg_buf_ptr
+    lda     #>BG_BUF_ADDR
+    sta     bg_buf_ptr+1
     rts
 .endproc
 
 .proc draw_bg_buffer
     .importzp soft_ppu_ctrl   ; lib/nes/system.inc
 
-    lda    bg_buf_ptr
-    bne    :+
+    lda     bg_buf_ptr
+    bne     :+
     rts
 :
     ldx    #$00
 main_loop:
     ;;; Load PPU_ADDR from next 2 bytes
-    bit    PPU_STATUS
-    lda    BG_BUF_ADDR+1, x    ; High byte first...
-    sta    PPU_ADDR
-    lda    BG_BUF_ADDR, x        ; ...then low byte
-    sta    PPU_ADDR
+    bit     PPU_STATUS
+    lda     BG_BUF_ADDR+1, x    ; High byte first...
+    sta     PPU_ADDR
+    lda     BG_BUF_ADDR, x        ; ...then low byte
+    sta     PPU_ADDR
     inx
     inx
 
     ;;; Set VRAM increase direction
-    lda    soft_ppu_ctrl
+    lda     soft_ppu_ctrl
 
-    ldy    BG_BUF_ADDR, x
-    bmi    vram_down
+    ldy     BG_BUF_ADDR, x
+    bmi     vram_down
 vram_right:
-    and    #%11111011
-    jmp    :+
+    and     #%11111011
+    jmp     :+
 vram_down:
-    ora    #%00000100
+    ora     #%00000100
 :    
-    sta    PPU_CTRL
+    sta     PPU_CTRL
 
     ;;; Check bit 6 for either literal or run
-    lda    BG_BUF_ADDR, x
-    rol            ; Move bit 6 to sign...
-    bmi    draw_run    ; ...in order to check it
+    lda     BG_BUF_ADDR, x
+    rol                     ; Move bit 6 to sign...
+    bmi     draw_run        ; ...in order to check it
 
 draw_literal:
-    lda    BG_BUF_ADDR, x
+    lda     BG_BUF_ADDR, x
     inx
-    and    #%00111111
+    and     #%00111111
 
     tay    ; Y holds the decreasing counter
     iny
 literal_loop:
-    lda    BG_BUF_ADDR, x
-    sta    PPU_DATA
+    lda     BG_BUF_ADDR, x
+    sta     PPU_DATA
     inx
     dey
-    bne    literal_loop
+    bne     literal_loop
 
-    jmp    main_loop_continue
+    jmp     main_loop_continue
 
 draw_run:
-    lda    BG_BUF_ADDR, x
+    lda     BG_BUF_ADDR, x
     inx
-    and    #%00111111
+    and     #%00111111
     clc
-    adc    #$01
+    adc     #$01
     tay
 
-    lda    BG_BUF_ADDR, x
+    lda     BG_BUF_ADDR, x
     inx
 run_loop:
-    sta    PPU_DATA
+    sta     PPU_DATA
     dey
-    bne    run_loop
+    bne     run_loop
 
 main_loop_continue:
-    cpx    bg_buf_ptr    ; Assumes <draw_buf == $00
-    bcc    main_loop
+    cpx     bg_buf_ptr    ; Assumes <draw_buf == $00
+    bcc     main_loop
 
-    jmp    reset_bg_buf_ptr
+    jmp     reset_bg_buf_ptr
 .endproc
 
 .exportzp bg_buf_ptr
-.export update_bg_buf_ptr
-.export reset_bg_buf_ptr
-.export draw_bg_buffer
+.export update_bg_buf_ptr, reset_bg_buf_ptr, draw_bg_buffer

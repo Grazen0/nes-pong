@@ -14,14 +14,14 @@ DRAW_RUN    = %01000000
 .macro BG_BUF_ENTRY_SETUP dest, len, flags
     .importzp bg_buf_ptr
 
-    lda    #<dest
-    sta    (bg_buf_ptr), y
+    lda     #<dest
+    sta     (bg_buf_ptr), y
     iny
-    lda    #>dest
-    sta    (bg_buf_ptr), y
+    lda     #>dest
+    sta     (bg_buf_ptr), y
     iny
-    lda    #(flags | (len - 1))
-    sta    (bg_buf_ptr), y
+    lda     #(flags | (len - 1))
+    sta     (bg_buf_ptr), y
     iny
 .endmacro
 
@@ -30,10 +30,10 @@ DRAW_RUN    = %01000000
 
     BG_BUF_ENTRY_SETUP dest, len, (draw_dir | DRAW_RUN)
     
-    lda    #data
-    sta    (bg_buf_ptr), y
+    lda     #data
+    sta     (bg_buf_ptr), y
 
-    jsr    update_bg_buf_ptr
+    jsr     update_bg_buf_ptr
 .endmacro
 
 .endif

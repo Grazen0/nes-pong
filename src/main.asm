@@ -2,13 +2,12 @@
 
 .include "pseudo_ops.inc"
 .include "system.inc"
-.include "bg_buffer.inc"
 
 .segment "HEADER"
-.byte "NES", $1A ; Required header
-.byte $01        ; 1 * 16 KB of PRG ROM
-.byte $01        ; 1 * 8 KB of CHR ROM
-.byte %00000000  ; Some flags
+.byte "NES", $1A    ; Required header
+.byte $01           ; 1 * 16 KB of PRG ROM
+.byte $01           ; 1 * 8 KB of CHR ROM
+.byte %00000000     ; Some flags
 
 .segment "CODE"
 
@@ -28,20 +27,20 @@
     ldx     #$FF    ; / Set up stack
     txs             ; \
 
-    inx                  ; X = 0
-    stx     PPU_CTRL     ; Disable NMIs
-    stx     PPU_MASK     ; Disable rendering
-    stx     APU_STATUS   ; Disable sound
-    stx     APU_DMC_CTRL ; Disable DMC IRQs
-    ; stx    dma_enabled  ; Disable OAM transfer
-    ; stx    draw_enabled ; Disable buffer drawing
-    lda     #$40
-    sta     APU_FC        ; Disable APU IRQs
+    inx                     ; X = 0
+    stx     PPU_CTRL        ; Disable NMIs
+    stx     PPU_MASK        ; Disable rendering
+    stx     APU_STATUS      ; Disable sound
+    stx     APU_DMC_CTRL    ; Disable DMC IRQs
+    ; stx    dma_enabled      ; Disable OAM transfer
+    ; stx    draw_enabled     ; Disable buffer drawing
+    lda     #$40            ; / Disable APU IRQs
+    sta     APU_FC          ; \
 
     stx     soft_ppu_ctrl    ; These still need 0,
     stx     soft_ppu_mask    ; but aren't as critical
 
-    bit     PPU_STATUS    ; Clear VBL flag just in case
+    bit     PPU_STATUS  ; Clear VBL flag just in case
     WAIT_VBLANK_FISHY
 
     ;;; Reset OAM sprite data
@@ -74,8 +73,8 @@ clear_oam_loop:
 
     ;;; FINAL INIT
     ldx     #$01
-    stx     nmi_enabled    ; Enable NMI processing
-    stx     dma_enabled    ; Enable OAM transfer
+    stx     nmi_enabled     ; Enable NMI processing
+    stx     dma_enabled     ; Enable OAM transfer
     stx     draw_enabled    ; Enable buffer drawing
 
     dex                 ; X = 0
@@ -108,59 +107,11 @@ waiting_for_vblank:
     jmp     main_loop
 .endproc
 
-.proc nmi
-    .import draw_bg_buffer                                              ; lib/nes/bg_buffer.asm
-    .importzp sleeping, soft_ppu_mask, soft_ppu_ctrl, draw_enabled, \
-        dma_enabled, nmi_enabled                                        ; lib/nes/system.asm
-
-    pha
-    lda    nmi_enabled
-    beq    nmi_disabled
-    
-    txa
-    pha
-    tya
-    pha
-
-    ;;; Transfer sprite data to PPU OAM
-    lda    dma_enabled
-    beq    :+
-    lda    #$00
-    sta    OAM_ADDR
-    lda    #>OAM
-    sta    OAM_DMA
-:    
-    ;;; Draw buffer
-    lda    draw_enabled
-    beq    :+
-    jsr    draw_bg_buffer
-:
-    ;;; Restore PPU_CTRL and scroll after VRAM writes
-    lda    soft_ppu_ctrl
-    sta    PPU_CTRL
-    lda    soft_ppu_mask
-    sta    PPU_MASK
-
-    bit    PPU_STATUS    ; Latch (?)
-    lda    #$00
-    sta    PPU_SCROLL
-    sta    PPU_SCROLL
-
-    ; lda    #$00
-    sta    sleeping    ; Clear sleeping flag
-
-    pla
-    tay
-    pla
-    tax
-nmi_disabled:
-    pla
-    rti
-.endproc
-
 .segment "VECTORS"
-    .word nmi
-    .word reset
+.import nmi ; game/nmi.asm
+
+.word nmi
+.word reset
 
 .segment "CHARS"
-    .incbin "res/graphics.chr"
+.incbin "res/graphics.chr"
