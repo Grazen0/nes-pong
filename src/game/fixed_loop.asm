@@ -1,18 +1,19 @@
-.include "fixed_loop.inc"
+.linecont +
 
 .include "system.inc"
 .include "pseudo_ops.inc"
 .include "controller.inc"
 .include "constants.inc"
-.include "variables.inc"
 .include "subroutines.inc"
-
 
 .segment "CODE"
 
-.proc GameFixedLoop
+.proc game_fixed_loop
 
-.proc paddleAMovement
+.proc paddle_a_movement
+    .importzp buttons   ; lib/nes/controller.asm
+    .importzp paddle_a_y    ; game/variables.asm
+
     ;;; DOWN
     lda    buttons
     and    #BTN_DOWN
@@ -39,7 +40,9 @@
 end:
 .endproc
 
-.proc paddleBMovement
+.proc paddle_b_movement
+    .importzp paddle_b_y, ball_y    ; game/variables.asm
+
     lda    paddle_b_y
     clc
     adc    #(PADDLE_HEIGHT / 2)    
@@ -62,7 +65,11 @@ move_down:
 end:
 .endproc
 
-.proc ballMovement
+.proc ball_movement
+    .importzp ball_x, ball_y, ball_speed_x, ball_speed_y, paddle_a_y, \
+        paddle_b_y, player_a_score, player_b_score                      ; game/variables.asm
+    .import reset_ball, draw_player_b_score                             ; game/subroutines.asm
+
     ;;; VERTICAL
     lda    ball_y
     clc
@@ -114,8 +121,8 @@ no_paddle_a_col:
 
     ;;; Collision with the border on the right
     inc    player_b_score
-    jsr    DrawPlayerBScore
-    jsr    ResetBall
+    jsr    draw_player_b_score
+    jsr    reset_ball
     jmp    end
 
 left_collisions:
@@ -147,11 +154,15 @@ no_paddle_b_col:
 
 left_wall_collided:
     inc    player_a_score
-    jsr    ResetBall
+    jsr    reset_ball
 end:
 .endproc
 
-.proc updateSpriteData
+.proc update_sprite_data
+    .importzp ball_x, ball_y, paddle_a_y, paddle_b_y    ; game/variables.asm
+    .import spr_ball, sprs_paddle_a, sprs_paddle_b      ; '
+    .importzp dma_enabled ; lib/nes/system.asm
+
     lda    #$00        ; Disable OAM transfer 
     sta    dma_enabled
 
@@ -159,9 +170,9 @@ end:
     ;;; Ball
     ldx    ball_y
     dex
-    stx    spr_ball+Sprite::Y_POS
+    stx    spr_ball + Sprite::pos_y
     lda    ball_x
-    sta    spr_ball+Sprite::X_POS
+    sta    spr_ball + Sprite::pos_x
 
     ;;; Paddle A
     ldx    paddle_a_y
@@ -170,7 +181,7 @@ end:
     ldx    #$00
     clc
 update_paddle_a_loop:
-    sta    sprs_paddle_a+Sprite::Y_POS, x
+    sta    sprs_paddle_a + Sprite::pos_y, x
     adc    #$08
     inx
     inx
@@ -186,7 +197,7 @@ update_paddle_a_loop:
     ldx    #$00
     clc
 update_paddle_b_loop:
-    sta    sprs_paddle_b+Sprite::Y_POS, x
+    sta    sprs_paddle_b + Sprite::pos_y, x
     adc    #$08
     inx
     inx
@@ -201,3 +212,5 @@ update_paddle_b_loop:
 
     rts
 .endproc
+
+.export game_fixed_loop

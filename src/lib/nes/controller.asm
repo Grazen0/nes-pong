@@ -1,13 +1,11 @@
 .include "controller.inc"
 
-.include "system.inc"
-
 .segment "ZEROPAGE"
-buttons:    .res 1    ; mask
+buttons:    .res 1  
 
 .segment "CODE"
 
-.proc ReadJoypad
+.proc read_joypad
     lda    #$01
     sta    JOYPAD_1
     sta    buttons
@@ -22,3 +20,6 @@ read_loop:
 
     rts
 .endproc
+
+.exportzp buttons
+.export read_joypad

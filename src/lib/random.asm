@@ -1,11 +1,9 @@
-.include "random.inc"
-
 .segment "ZEROPAGE"
 rng_seed:    .res 1
 
 .segment "CODE"
 
-.proc RandomByte
+.proc random_byte
     lda    rng_seed
     beq    do_eor
     asl
@@ -17,3 +15,6 @@ no_eor:
     sta    rng_seed
     rts
 .endproc
+
+.exportzp rng_seed
+.export random_byte

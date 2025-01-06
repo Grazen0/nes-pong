@@ -1,13 +1,12 @@
 .include "bg_buffer.inc"
-
 .include "system.inc"
 
 .segment "ZEROPAGE"
-bg_buf_ptr:        .res 2    ; u16
+bg_buf_ptr: .res 2  ; u16
 
 .segment "CODE"
 
-.proc UpdateBgBufPtr
+.proc update_bg_buf_ptr
     ;;; bg_buf_ptr += Y + 1
     tya
     sec
@@ -16,7 +15,7 @@ bg_buf_ptr:        .res 2    ; u16
     rts
 .endproc
 
-.proc ResetBgBufPtr
+.proc reset_bg_buf_ptr
     lda    #<BG_BUF_ADDR
     sta    bg_buf_ptr
     lda    #>BG_BUF_ADDR
@@ -24,7 +23,9 @@ bg_buf_ptr:        .res 2    ; u16
     rts
 .endproc
 
-.proc DrawBgBuffer
+.proc draw_bg_buffer
+    .importzp soft_ppu_ctrl   ; lib/nes/system.inc
+
     lda    bg_buf_ptr
     bne    :+
     rts
@@ -93,5 +94,10 @@ main_loop_continue:
     cpx    bg_buf_ptr    ; Assumes <draw_buf == $00
     bcc    main_loop
 
-    jmp    ResetBgBufPtr
+    jmp    reset_bg_buf_ptr
 .endproc
+
+.exportzp bg_buf_ptr
+.export update_bg_buf_ptr
+.export reset_bg_buf_ptr
+.export draw_bg_buffer

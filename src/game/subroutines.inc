@@ -3,11 +3,9 @@ __GAME_SUBROUTINES_INC__ = 1
 
 .include "bg_buffer.inc"
 
-.global ResetBall
-.global DrawPlayerAScore
-.global DrawPlayerBScore
-
 .macro DRAW_X_BIG_NUMBER ppu_addr
+    .importzp bg_buf_ptr
+
     BG_BUF_ENTRY_SETUP ppu_addr, $03, (DRAW_LIT | DRAW_DOWN)
     lda    digit_tile_1_1, x
     sta    (bg_buf_ptr), y
