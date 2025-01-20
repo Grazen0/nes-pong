@@ -1,5 +1,6 @@
 .include "bg_buffer.inc"
 .include "system.inc"
+.include "pseudo_ops.inc"
 
 .segment "ZEROPAGE"
 bg_buf_ptr: .res 2  ; u16
@@ -16,10 +17,7 @@ bg_buf_ptr: .res 2  ; u16
 .endproc
 
 .proc reset_bg_buf_ptr
-    lda     #<BG_BUF_ADDR
-    sta     bg_buf_ptr
-    lda     #>BG_BUF_ADDR
-    sta     bg_buf_ptr+1
+    STW     BG_BUF_ADDR, bg_buf_ptr
     rts
 .endproc
 

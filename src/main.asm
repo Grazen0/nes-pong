@@ -46,10 +46,10 @@
     ;;; Reset OAM sprite data
     ;;; At this point, X = 0
     lda     #$FF
-clear_oam_loop:
+@clear_oam_loop:
     sta     OAM, x
     inx
-    bne     clear_oam_loop
+    bne     @clear_oam_loop
 
     WAIT_VBLANK_FISHY
 

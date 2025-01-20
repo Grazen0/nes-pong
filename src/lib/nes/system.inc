@@ -45,9 +45,8 @@ OAM         = $0200
 .endmacro
 
 .macro WAIT_VBLANK_FISHY
-@wait_vblank_loop:
-    bit     PPU_STATUS
-    bpl     @wait_vblank_loop
+:   bit     PPU_STATUS
+    bpl     :-
 .endmacro
 
 .endif
